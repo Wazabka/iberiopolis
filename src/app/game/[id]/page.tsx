@@ -45,45 +45,37 @@ export default function GameRoom() {
 
   async function loadRoom(userId?: string) {
     if (!roomId || redirectingRef.current) return
-
     const { data: roomData } = await supabase
       .from('game_rooms')
       .select('*')
       .eq('id', roomId)
       .single()
-
     if (!roomData) return
     setRoom(roomData)
-
     if (roomData.status === 'playing') {
       redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
       window.location.href = `/game/${roomId}/play`
       return
     }
-
     if (roomData.status === 'finished') {
       redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
       window.location.href = '/lobby'
       return
     }
-
     const { data: playersData } = await supabase
       .from('game_players')
       .select('*, profiles(username, avatar_url)')
       .eq('room_id', roomId)
       .order('turn_order')
-
     setPlayers(playersData || [])
-
     const uid = userId || userRef.current?.id
     if (uid && playersData) {
       const me = playersData.find((p: any) => p.user_id === uid)
       setMyPlayer(me || null)
       if (me?.role) setSelectedRole(me.role as Role)
     }
-
     setLoading(false)
   }
 
@@ -116,10 +108,8 @@ export default function GameRoom() {
     if (players.some(p => !p.role)) { setError('Todos los jugadores deben elegir un rol'); return }
     setStarting(true)
     setError('')
-
     try {
       const shuffled = [...players].sort(() => Math.random() - 0.5)
-
       for (let i = 0; i < shuffled.length; i++) {
         const { error } = await supabase
           .from('game_players')
@@ -127,10 +117,10 @@ export default function GameRoom() {
           .eq('id', shuffled[i].id)
         if (error) throw new Error('Error orden: ' + error.message)
       }
-
+      await supabase.from('game_state').delete().eq('room_id', roomId)
       const { error: gsError } = await supabase
         .from('game_state')
-        .upsert({
+        .insert({
           room_id: roomId,
           current_player_id: shuffled[0].id,
           current_turn: 1,
@@ -138,19 +128,16 @@ export default function GameRoom() {
           phase: 'roll',
           dice_result: [],
           log: [],
-        }, { onConflict: 'room_id' })
+        })
       if (gsError) throw new Error('Error estado: ' + gsError.message)
-
       const { error: roomError } = await supabase
         .from('game_rooms')
         .update({ status: 'playing' })
         .eq('id', roomId)
       if (roomError) throw new Error('Error sala: ' + roomError.message)
-
       redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
       window.location.href = `/game/${roomId}/play`
-
     } catch (err: any) {
       setError(err.message || 'Error al iniciar')
       setStarting(false)
