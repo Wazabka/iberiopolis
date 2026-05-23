@@ -20,6 +20,7 @@ export default function GameRoom() {
   const [mounted, setMounted] = useState(false)
   const userRef = useRef<any>(null)
   const intervalRef = useRef<any>(null)
+  const redirectingRef = useRef(false)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -37,22 +38,35 @@ export default function GameRoom() {
     userRef.current = user
     setUser(user)
     await loadRoom(user.id)
-    intervalRef.current = setInterval(() => loadRoom(userRef.current?.id), 2000)
+    intervalRef.current = setInterval(() => {
+      if (!redirectingRef.current) loadRoom(userRef.current?.id)
+    }, 2000)
   }
 
   async function loadRoom(userId?: string) {
-    if (!roomId) return
+    if (!roomId || redirectingRef.current) return
+
     const { data: roomData } = await supabase
       .from('game_rooms')
       .select('*')
       .eq('id', roomId)
       .single()
+
     if (!roomData) return
+
     setRoom(roomData)
 
     if (roomData.status === 'playing') {
+      redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
       router.push(`/game/${roomId}/play`)
+      return
+    }
+
+    if (roomData.status === 'finished') {
+      redirectingRef.current = true
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      router.push('/lobby')
       return
     }
 
@@ -70,6 +84,7 @@ export default function GameRoom() {
       setMyPlayer(me || null)
       if (me?.role) setSelectedRole(me.role as Role)
     }
+
     setLoading(false)
   }
 
@@ -84,6 +99,7 @@ export default function GameRoom() {
   }
 
   async function leaveRoom() {
+    redirectingRef.current = true
     if (intervalRef.current) clearInterval(intervalRef.current)
     if (myPlayer) {
       await supabase.from('game_players').delete().eq('id', myPlayer.id)
@@ -119,6 +135,7 @@ export default function GameRoom() {
       const { error: roomError } = await supabase
         .from('game_rooms').update({ status: 'playing' }).eq('id', roomId)
       if (roomError) throw roomError
+      redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
       router.push(`/game/${roomId}/play`)
     } catch (err: any) {
