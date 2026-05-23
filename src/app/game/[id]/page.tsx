@@ -120,7 +120,7 @@ export default function GameRoom() {
       for (let i = 0; i < shuffled.length; i++) {
         await supabase.from('game_players').update({ turn_order: i }).eq('id', shuffled[i].id)
       }
-      await supabase.from('game_state').insert({
+      const { error: gsError } = await supabase.from('game_state').upsert({
         room_id: roomId,
         current_player_id: shuffled[0].id,
         current_turn: 1,
@@ -128,8 +128,13 @@ export default function GameRoom() {
         phase: 'roll',
         dice_result: [],
         log: [],
-      })
-      await supabase.from('game_rooms').update({ status: 'playing' }).eq('id', roomId)
+      }, { onConflict: 'room_id' })
+      if (gsError) throw gsError
+      const { error: roomError } = await supabase
+        .from('game_rooms')
+        .update({ status: 'playing' })
+        .eq('id', roomId)
+      if (roomError) throw roomError
       router.push(`/game/${roomId}/play`)
     } catch (err: any) {
       setError(err.message || 'Error al iniciar la partida')

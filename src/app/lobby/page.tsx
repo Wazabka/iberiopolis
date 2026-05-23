@@ -21,6 +21,8 @@ export default function Lobby() {
     if (!mounted) return
     checkUser()
     loadRooms()
+    const interval = setInterval(loadRooms, 10000)
+    return () => clearInterval(interval)
   }, [mounted])
 
   async function checkUser() {
@@ -39,7 +41,8 @@ export default function Lobby() {
       .eq('status', 'waiting')
       .order('created_at', { ascending: false })
       .limit(10)
-    setRooms(data || [])
+    const activeRooms = (data || []).filter((r: any) => (r.game_players?.[0]?.count || 0) > 0)
+    setRooms(activeRooms)
   }
 
   async function createRoom() {
