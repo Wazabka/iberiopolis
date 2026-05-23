@@ -40,7 +40,7 @@ export default function GameRoom() {
     await loadRoom(user.id)
     intervalRef.current = setInterval(() => {
       if (!redirectingRef.current) loadRoom(userRef.current?.id)
-    }, 2000)
+    }, 1000)
   }
 
   async function loadRoom(userId?: string) {
@@ -53,20 +53,19 @@ export default function GameRoom() {
       .single()
 
     if (!roomData) return
-
     setRoom(roomData)
 
     if (roomData.status === 'playing') {
       redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
-      router.push(`/game/${roomId}/play`)
+      window.location.href = `/game/${roomId}/play`
       return
     }
 
     if (roomData.status === 'finished') {
       redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
-      router.push('/lobby')
+      window.location.href = '/lobby'
       return
     }
 
@@ -109,7 +108,7 @@ export default function GameRoom() {
         await supabase.from('game_rooms').update({ status: 'finished' }).eq('id', roomId)
       }
     }
-    router.push('/lobby')
+    window.location.href = '/lobby'
   }
 
   async function startGame() {
@@ -117,29 +116,43 @@ export default function GameRoom() {
     if (players.some(p => !p.role)) { setError('Todos los jugadores deben elegir un rol'); return }
     setStarting(true)
     setError('')
+
     try {
       const shuffled = [...players].sort(() => Math.random() - 0.5)
+
       for (let i = 0; i < shuffled.length; i++) {
-        await supabase.from('game_players').update({ turn_order: i }).eq('id', shuffled[i].id)
+        const { error } = await supabase
+          .from('game_players')
+          .update({ turn_order: i })
+          .eq('id', shuffled[i].id)
+        if (error) throw new Error('Error orden: ' + error.message)
       }
-      const { error: gsError } = await supabase.from('game_state').upsert({
-        room_id: roomId,
-        current_player_id: shuffled[0].id,
-        current_turn: 1,
-        current_round: 1,
-        phase: 'roll',
-        dice_result: [],
-        log: [],
-      }, { onConflict: 'room_id' })
-      if (gsError) throw gsError
+
+      const { error: gsError } = await supabase
+        .from('game_state')
+        .upsert({
+          room_id: roomId,
+          current_player_id: shuffled[0].id,
+          current_turn: 1,
+          current_round: 1,
+          phase: 'roll',
+          dice_result: [],
+          log: [],
+        }, { onConflict: 'room_id' })
+      if (gsError) throw new Error('Error estado: ' + gsError.message)
+
       const { error: roomError } = await supabase
-        .from('game_rooms').update({ status: 'playing' }).eq('id', roomId)
-      if (roomError) throw roomError
+        .from('game_rooms')
+        .update({ status: 'playing' })
+        .eq('id', roomId)
+      if (roomError) throw new Error('Error sala: ' + roomError.message)
+
       redirectingRef.current = true
       if (intervalRef.current) clearInterval(intervalRef.current)
-      router.push(`/game/${roomId}/play`)
+      window.location.href = `/game/${roomId}/play`
+
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar la partida')
+      setError(err.message || 'Error al iniciar')
       setStarting(false)
     }
   }
