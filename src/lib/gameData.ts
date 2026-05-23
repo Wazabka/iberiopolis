@@ -1,5 +1,4 @@
-import { Player, Property } from '@/types/game'
-
+import { Player, Property, PropertyDef, SpecialSquare, CardDef } from '@/types/game'
 export const PROPERTIES: PropertyDef[] = [
   { key: 'glovo', name: 'Glovo', group: 'startup', price: 40000, rents: [2000, 5000, 12000, 25000], buildCosts: [20000, 40000, 80000], position: 1 },
   { key: 'cabify', name: 'Cabify', group: 'startup', price: 40000, rents: [2000, 5000, 12000, 25000], buildCosts: [20000, 40000, 80000], position: 2 },
