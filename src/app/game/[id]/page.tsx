@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ROLES_DEF, PLAYER_COLORS } from '@/lib/gameData'
@@ -18,54 +18,40 @@ export default function GameRoom() {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState('')
   const [mounted, setMounted] = useState(false)
+  const userRef = useRef<any>(null)
+  const intervalRef = useRef<any>(null)
 
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!mounted) return
-    checkUser()
+    init()
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
   }, [mounted])
 
-  useEffect(() => {
-    if (!roomId) return
-    const channel = supabase
-      .channel(`room:${roomId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'game_players',
-        filter: `room_id=eq.${roomId}`
-      }, () => loadRoom())
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'game_rooms',
-        filter: `id=eq.${roomId}`
-      }, (payload: any) => {
-        if (payload.new?.status === 'playing') {
-          router.push(`/game/${roomId}/play`)
-        }
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [roomId])
-
-  async function checkUser() {
+  async function init() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/'); return }
+    userRef.current = user
     setUser(user)
     await loadRoom(user.id)
+    intervalRef.current = setInterval(() => loadRoom(userRef.current?.id), 2000)
   }
 
   async function loadRoom(userId?: string) {
+    if (!roomId) return
     const { data: roomData } = await supabase
       .from('game_rooms')
       .select('*')
       .eq('id', roomId)
       .single()
+    if (!roomData) return
     setRoom(roomData)
 
-    if (roomData?.status === 'playing') {
+    if (roomData.status === 'playing') {
+      if (intervalRef.current) clearInterval(intervalRef.current)
       router.push(`/game/${roomId}/play`)
       return
     }
@@ -75,34 +61,34 @@ export default function GameRoom() {
       .select('*, profiles(username, avatar_url)')
       .eq('room_id', roomId)
       .order('turn_order')
+
     setPlayers(playersData || [])
 
-    const uid = userId || user?.id
+    const uid = userId || userRef.current?.id
     if (uid && playersData) {
       const me = playersData.find((p: any) => p.user_id === uid)
-      setMyPlayer(me)
-      if (me?.role) setSelectedRole(me.role)
+      setMyPlayer(me || null)
+      if (me?.role) setSelectedRole(me.role as Role)
     }
     setLoading(false)
   }
 
   async function selectRole(role: Role) {
-    if (!myPlayer) return
-    const taken = players.find(p => p.role === role && p.user_id !== user?.id)
+    const me = myPlayer
+    if (!me) return
+    const taken = players.find(p => p.role === role && p.user_id !== userRef.current?.id)
     if (taken) { setError('Ese rol ya está cogido'); return }
     setSelectedRole(role)
     setError('')
-    await supabase.from('game_players').update({ role }).eq('id', myPlayer.id)
-    await loadRoom()
+    await supabase.from('game_players').update({ role }).eq('id', me.id)
   }
 
   async function leaveRoom() {
+    if (intervalRef.current) clearInterval(intervalRef.current)
     if (myPlayer) {
       await supabase.from('game_players').delete().eq('id', myPlayer.id)
       const { data: remaining } = await supabase
-        .from('game_players')
-        .select('id')
-        .eq('room_id', roomId)
+        .from('game_players').select('id').eq('room_id', roomId)
       if (!remaining || remaining.length === 0) {
         await supabase.from('game_rooms').update({ status: 'finished' }).eq('id', roomId)
       }
@@ -131,10 +117,9 @@ export default function GameRoom() {
       }, { onConflict: 'room_id' })
       if (gsError) throw gsError
       const { error: roomError } = await supabase
-        .from('game_rooms')
-        .update({ status: 'playing' })
-        .eq('id', roomId)
+        .from('game_rooms').update({ status: 'playing' }).eq('id', roomId)
       if (roomError) throw roomError
+      if (intervalRef.current) clearInterval(intervalRef.current)
       router.push(`/game/${roomId}/play`)
     } catch (err: any) {
       setError(err.message || 'Error al iniciar la partida')
@@ -148,7 +133,7 @@ export default function GameRoom() {
     </div>
   )
 
-  const isHost = room?.host_id === user?.id
+  const isHost = room?.host_id === userRef.current?.id
   const roles = Object.entries(ROLES_DEF) as [Role, typeof ROLES_DEF.saboteador][]
 
   return (
@@ -217,7 +202,7 @@ export default function GameRoom() {
           <h2 style={{ fontWeight: '500', fontSize: '1rem', marginBottom: '0.75rem' }}>Elige tu rol</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {roles.map(([key, def]) => {
-              const taken = players.find(p => p.role === key && p.user_id !== user?.id)
+              const taken = players.find(p => p.role === key && p.user_id !== userRef.current?.id)
               const selected = selectedRole === key
               return (
                 <button
