@@ -19,9 +19,7 @@ export default function GameRoom() {
   const [error, setError] = useState('')
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!mounted) return
@@ -98,6 +96,20 @@ export default function GameRoom() {
     await loadRoom()
   }
 
+  async function leaveRoom() {
+    if (myPlayer) {
+      await supabase.from('game_players').delete().eq('id', myPlayer.id)
+      const { data: remaining } = await supabase
+        .from('game_players')
+        .select('id')
+        .eq('room_id', roomId)
+      if (!remaining || remaining.length === 0) {
+        await supabase.from('game_rooms').update({ status: 'finished' }).eq('id', roomId)
+      }
+    }
+    router.push('/lobby')
+  }
+
   async function startGame() {
     if (players.length < 2) { setError('Necesitas al menos 2 jugadores'); return }
     if (players.some(p => !p.role)) { setError('Todos los jugadores deben elegir un rol'); return }
@@ -143,7 +155,7 @@ export default function GameRoom() {
             Código: <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'white' }}>{room?.code}</span> — compártelo con tus amigos
           </p>
         </div>
-        <button onClick={() => router.push('/lobby')} className="btn btn-secondary" style={{ fontSize: '0.875rem' }}>Salir</button>
+        <button onClick={leaveRoom} className="btn btn-secondary" style={{ fontSize: '0.875rem' }}>Salir</button>
       </div>
 
       {error && (
