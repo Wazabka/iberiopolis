@@ -15,14 +15,11 @@ export default function Home() {
   const [message, setMessage] = useState('')
 
   useEffect(() => { setMounted(true) }, [])
-
   if (!mounted) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-    setMessage('')
+    setLoading(true); setError(''); setMessage('')
     try {
       if (mode === 'login') {
         await signInWithEmail(email, password)
@@ -33,112 +30,64 @@ export default function Home() {
       }
     } catch (err: any) {
       setError(err.message || 'Error desconocido')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   async function handleGoogle() {
-    setLoading(true)
-    setError('')
-    try {
-      await signInWithGoogle()
-    } catch (err: any) {
-      setError(err.message || 'Error con Google')
-      setLoading(false)
-    }
+    setLoading(true); setError('')
+    try { await signInWithGoogle() }
+    catch (err: any) { setError(err.message || 'Error con Google'); setLoading(false) }
   }
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: '#09090b' }}>
       <div style={{ width: '100%', maxWidth: '420px' }}>
 
-      <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-  <button onClick={() => router.push('/jugar')} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}>
-    Jugar sin cuenta
-  </button>
-</div>
-
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '3rem', fontWeight: '700', color: '#f59e0b', marginBottom: '0.25rem' }}>
-            Iberiópolis
-          </h1>
-          <p style={{ color: '#71717a' }}>El Monopoly español online</p>
+          <h1 style={{ fontSize: '3rem', fontWeight: 700, color: '#f59e0b', marginBottom: '4px' }}>Iberiópolis</h1>
+          <p style={{ color: '#71717a', fontSize: '14px' }}>El Monopoly español online</p>
         </div>
 
-        <div className="card">
-          <div style={{ display: 'flex', marginBottom: '1.5rem', background: '#27272a', borderRadius: '0.5rem', padding: '4px' }}>
-            <button
-              onClick={() => setMode('login')}
-              style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', fontWeight: '500', fontSize: '0.875rem', border: 'none', cursor: 'pointer', background: mode === 'login' ? '#f59e0b' : 'transparent', color: mode === 'login' ? 'black' : '#a1a1aa' }}
-            >
-              Iniciar sesión
-            </button>
-            <button
-              onClick={() => setMode('register')}
-              style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', fontWeight: '500', fontSize: '0.875rem', border: 'none', cursor: 'pointer', background: mode === 'register' ? '#f59e0b' : 'transparent', color: mode === 'register' ? 'black' : '#a1a1aa' }}
-            >
-              Registrarse
-            </button>
+        <div className="card" style={{ marginBottom: '12px' }}>
+          <div style={{ display: 'flex', marginBottom: '1.5rem', background: '#27272a', borderRadius: '8px', padding: '4px' }}>
+            {(['login', 'register'] as const).map(m => (
+              <button key={m} onClick={() => setMode(m)} style={{ flex: 1, padding: '8px', borderRadius: '6px', fontWeight: 500, fontSize: '14px', border: 'none', cursor: 'pointer', background: mode === m ? '#f59e0b' : 'transparent', color: mode === m ? 'black' : '#a1a1aa', transition: 'all 0.15s' }}>
+                {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
+              </button>
+            ))}
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {mode === 'register' && (
               <div>
-                <label style={{ fontSize: '0.875rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Nombre de usuario</label>
-                <input
-                  className="input"
-                  type="text"
-                  placeholder="Tu nombre en el juego"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  required
-                />
+                <label style={{ fontSize: '13px', color: '#a1a1aa', display: 'block', marginBottom: '5px' }}>Nombre de usuario</label>
+                <input className="input" type="text" placeholder="Tu nombre en el juego" value={username} onChange={e => setUsername(e.target.value)} required />
               </div>
             )}
             <div>
-              <label style={{ fontSize: '0.875rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Email</label>
-              <input
-                className="input"
-                type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
+              <label style={{ fontSize: '13px', color: '#a1a1aa', display: 'block', marginBottom: '5px' }}>Email</label>
+              <input className="input" type="email" placeholder="tu@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             <div>
-              <label style={{ fontSize: '0.875rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Contraseña</label>
-              <input
-                className="input"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
+              <label style={{ fontSize: '13px', color: '#a1a1aa', display: 'block', marginBottom: '5px' }}>Contraseña</label>
+              <input className="input" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
 
-            {error && <p style={{ color: '#f87171', fontSize: '0.875rem' }}>{error}</p>}
-            {message && <p style={{ color: '#4ade80', fontSize: '0.875rem' }}>{message}</p>}
+            {error && <p style={{ color: '#fca5a5', fontSize: '13px', background: '#450a0a', padding: '8px 10px', borderRadius: '6px', margin: 0 }}>{error}</p>}
+            {message && <p style={{ color: '#86efac', fontSize: '13px', background: '#14532d', padding: '8px 10px', borderRadius: '6px', margin: 0 }}>{message}</p>}
 
             <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%' }}>
               {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
             </button>
           </form>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '14px 0' }}>
             <div style={{ flex: 1, height: '1px', background: '#3f3f46' }} />
-            <span style={{ color: '#71717a', fontSize: '0.875rem' }}>o</span>
+            <span style={{ color: '#71717a', fontSize: '13px' }}>o</span>
             <div style={{ flex: 1, height: '1px', background: '#3f3f46' }} />
           </div>
 
-          <button
-            onClick={handleGoogle}
-            disabled={loading}
-            className="btn btn-secondary"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}
-          >
+          <button onClick={handleGoogle} disabled={loading} className="btn btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
               <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
@@ -149,7 +98,16 @@ export default function Home() {
           </button>
         </div>
 
-        <p style={{ textAlign: 'center', color: '#52525b', fontSize: '0.75rem', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+          <button onClick={() => router.push('/jugar')} style={{ background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
+            Jugar sin cuenta →
+          </button>
+          <button onClick={() => router.push('/reglas')} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}>
+            Ver las reglas
+          </button>
+        </div>
+
+        <p style={{ textAlign: 'center', color: '#52525b', fontSize: '11px', marginTop: '1.5rem' }}>
           Uso privado · Iberiópolis v1.0
         </p>
       </div>
