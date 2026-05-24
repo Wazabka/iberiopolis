@@ -478,12 +478,59 @@ export default function GamePlay() {
                   <div style={{ fontSize: '11px', color: '#71717a' }}>Turno de</div>
                   <div style={{ fontSize: '14px', fontWeight: 500 }}>{currentPlayer ? name(currentPlayer) : '—'}</div>
                 </div>
-                {diceAnim.length > 0 && (
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <span style={{ fontSize: '2rem' }}>{diceFaces[diceAnim[0]]}</span>
-                    <span style={{ fontSize: '2rem' }}>{diceFaces[diceAnim[1]]}</span>
-                  </div>
-                )}
+               {diceAnim.length > 0 && (
+  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+    {diceAnim.map((d, i) => (
+      <div key={i} style={{
+        width: '52px', height: '52px', background: 'white', borderRadius: '12px',
+        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: '1fr 1fr 1fr',
+        padding: '7px', gap: '3px',
+        boxShadow: rolling ? '0 0 20px rgba(245,158,11,0.8), 0 4px 12px rgba(0,0,0,0.5)' : '0 4px 12px rgba(0,0,0,0.5)',
+        border: rolling ? '2px solid #f59e0b' : '2px solid #e5e5e5',
+        transition: 'all 0.1s',
+        transform: rolling ? `rotate(${Math.random() * 30 - 15}deg)` : 'rotate(0deg)',
+      }}>
+        {[
+          [false, false, false, false, d >= 1, false, false, false, false],
+          [d >= 6, false, false, false, false, false, false, false, d >= 2],
+          [d >= 4, false, false, false, d === 5, false, false, false, d >= 4],
+          [d >= 2, false, false, false, false, false, false, false, d >= 6],
+          [false, false, false, false, d >= 1, false, false, false, false],
+        ][0].map((_, pi) => {
+          const dots: boolean[] = [
+            [1,2,3,4,5,6].includes(d) && [4].includes(pi),
+            [6].includes(d) && [0].includes(pi),
+            [4,5,6].includes(d) && [0].includes(pi),
+            [2,3,4,5,6].includes(d) && [2].includes(pi),
+            [5].includes(d) && [4].includes(pi),
+            [2,3,4,5,6].includes(d) && [6].includes(pi),
+            [4,5,6].includes(d) && [8].includes(pi),
+            [6].includes(d) && [8].includes(pi),
+            [1,2,3,4,5,6].includes(d) && false,
+          ]
+          return <div key={pi} />
+        })}
+        {(() => {
+          const positions: Record<number, number[]> = {
+            1: [4],
+            2: [2, 6],
+            3: [2, 4, 6],
+            4: [0, 2, 6, 8],
+            5: [0, 2, 4, 6, 8],
+            6: [0, 2, 3, 5, 6, 8],
+          }
+          return Array.from({ length: 9 }, (_, pi) => (
+            <div key={pi} style={{
+              borderRadius: '50%',
+              background: (positions[d] || []).includes(pi) ? '#1a1a2e' : 'transparent',
+              width: '100%', height: '100%',
+            }} />
+          ))
+        })()}
+      </div>
+    ))}
+  </div>
+)}
                 {isMyTurn && gameState?.phase === 'roll' && (
                   <button onClick={rollDice} disabled={rolling} style={{ background: '#f59e0b', color: 'black', border: 'none', borderRadius: '8px', padding: '8px 28px', fontWeight: 500, cursor: 'pointer', fontSize: '14px' }}>
                     {rolling ? 'Lanzando...' : 'Tirar dados'}

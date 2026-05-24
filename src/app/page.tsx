@@ -53,6 +53,12 @@ export default function Home() {
     <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div style={{ width: '100%', maxWidth: '420px' }}>
 
+      <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+  <button onClick={() => router.push('/jugar')} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}>
+    Jugar sin cuenta
+  </button>
+</div>
+
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '3rem', fontWeight: '700', color: '#f59e0b', marginBottom: '0.25rem' }}>
             Iberiópolis
