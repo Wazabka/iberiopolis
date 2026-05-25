@@ -141,6 +141,9 @@ export default function Lobby() {
         <button onClick={handleSignOut} className="btn btn-secondary" style={{ fontSize: '0.875rem' }}>
         <button onClick={() => router.push('/reglas')} style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '0.875rem', textDecoration: 'underline' }}>
   Reglas
+  <button onClick={() => router.push('/perfil')} style={{ background:'none', border:'none', color:'#6366f1', cursor:'pointer', fontSize:'13px', textDecoration:'underline' }}>
+  Mi perfil
+</button>
 </button>
           Cerrar sesión
         </button>
