@@ -128,7 +128,7 @@ function createAudio() {
 function Piece3D({ type, color, size = 20 }: { type: string; color: string; size?: number }) {
   const uid = `${type}_${color.replace('#', '')}_${size}`
 
-  const shapes: Record<string, JSX.Element> = {
+const shapes: Record<string, React.ReactElement> = {    
     corona: (
       <svg width={size} height={size} viewBox="0 0 40 40" overflow="visible">
         <defs>
